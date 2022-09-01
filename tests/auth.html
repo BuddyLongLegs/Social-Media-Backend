@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form onsubmit="login(event);">
+        <input type="email" name="email" id="email">
+        <input type="password" name="password" id="password">
+        <button type="submit">Submit!</button>
+    </form>
+    <button onclick="logout();">Logout!</button>
+    <script>
+        function login(event){
+            event.preventDefault();
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+
+            var xhr = new XMLHttpRequest();
+            var data = {email: email, password: password};
+            xhr.open("POST", '/login', true);
+            xhr.onload = function () {
+                var secret = (JSON.parse(this.responseText)).secret;
+                localStorage.setItem('secret', secret);
+                alert(secret);
+            };
+            xhr.withCredentials=true;
+            xhr.setRequestHeader("Content-type", "application/json;charset=UTF-8");
+            xhr.send(JSON.stringify(data));
+        }
+
+        function logout(){
+            localStorage.removeItem('secret');
+        }
+    </script>
+</body>
+</html>
