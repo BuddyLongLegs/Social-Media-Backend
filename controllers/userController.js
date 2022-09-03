@@ -308,13 +308,13 @@ async function verifyEmail(req, res){
     if(code ===undefined){
         return res.status(400).json({error:"required field(s) missing"})
     }
-    if( !user.verifyEmailRequest||
-        !user.verifyEmailRequest.createdAt||
-        ((Date.now()-user.verifyEmailRequest.createdAt)/1000 > (10*60))){
+    if( !user.verifyrequest||
+        !user.verifyrequest.createdAt||
+        ((Date.now()-user.verifyrequest.createdAt)/1000 > (10*60))){
 
         return res.status(400).status({error: "No Active Email Verification Request"});
     }
-    if(code !== user.verifyEmailRequest.code){
+    if(code !== user.verifyrequest.code){
         return res.status(409).json({error: "Incorrect Code"});
     }
     user.verified = true;
@@ -328,13 +328,13 @@ async function verifyEmail(req, res){
  
 async function verifyEmailRequest(req, res){
     let user = req.user;
-    user.verifyEmailRequest.createdAt = Date.now();
-    user.verifyEmailRequest.code = (Math.floor(100000 + Math.random() * 900000)).toString();
+    user.verifyrequest.createdAt = Date.now();
+    user.verifyrequest.code = (Math.floor(100000 + Math.random() * 900000)).toString();
     try{
         await user.save();
         notify(user.email,
             "Email Verification OTP",
-            `Use this OTP for verifying your email ID: ${user.verifyEmailRequest.code}.\nIt expires in 10 mins`);
+            `Use this OTP for verifying your email ID: ${user.verifyrequest.code}.\nIt expires in 10 mins`);
         return res.status(201).json({message: "OTP sent Successfully"});
     }catch(err){
         return res.status(500).json({error: err});

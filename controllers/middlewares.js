@@ -12,7 +12,7 @@ function ensureLoggedIn(req, res, next){
             }
             next();
         })
-    })(res, req, next)
+    })(req, res, next)
 }
 
 function completedProfileWithLogin(req, res, next){
