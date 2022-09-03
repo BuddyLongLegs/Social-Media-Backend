@@ -36,11 +36,11 @@ function completedProfileWithLogin(req, res, next){
 }
 
 function loginAndImage(req, res, next){
-    ensureLoggedIn(req, res, uploadImage(req, res, next));
+    ensureLoggedIn(req, res, uploadImage.single('profile')(req, res, next));
 }
 
 function completeAndMedia(req, res, next){
-    completedProfileWithLogin(req, res, uploadMedia(req, res, next));
+    completedProfileWithLogin(req, res, uploadMedia.array('images', 10)(req, res, next));
 }
 
 

@@ -1,14 +1,13 @@
 require("dotenv/config");
 const passport = require("passport");
 const Localstrategy = require("passport-local").Strategy;
-const CookieStrategy = require("passport-cookie").Strategy;
+const GoogleStrategy = require('passport-google-oauth20');
 const passportJWT = require("passport-jwt");
 const JWTStrategy   = passportJWT.Strategy;
 const ExtractJWT = passportJWT.ExtractJwt;
 
 const User = require("../models/userModel");
 const {genPassword,validPassword} = require("../utils/passwordEncrypt");
-const getTokenDetails = require("./googleoauth");
 
 
 //User signing in his/her account
@@ -21,18 +20,14 @@ passport.use('user-signin-local', new Localstrategy(
     },
     async (req, email, password, done) => {
         
-        //allowing usage of email as well as username for login, email has higher priority
-
-        if((!(req.body.username && req.body.username.length!=0) && !(email || email.length!=0))
+        if((!(email || email.length!=0))
             ||!(password && password.length!=0)){
             return done(null, false, {status:400, message:"required field(s) missing"});
         }
-        var user, v=false;
+        var v=false;
         try{
             if(email){
-                user = await User.findOne({email:email});
-            }else{
-                user = await User.findOne({username: req.body.username});
+                var user = await User.findOne({email:email});
             }
             if(!user){
                 return done(null, false, {status:404, message:"User not found"});
@@ -94,34 +89,33 @@ passport.use('user-signup-local', new Localstrategy(
     }
 ));
 
-
-//Google signin as well as sign up in one
-passport.use("user-google", new CookieStrategy(
-    {
-        cookieName: 'g_csrf_token',
-        passReqToCallback: true,
-        
-    },
-    async (req, token, done)=>{
-        let userdet = await getTokenDetails(req.body, token);
-        if(!userdet){
-            return done(null, false, {status:403, message:"Authentication Failed"});
+passport.use("user-google", new GoogleStrategy({
+    clientID: process.env.GOOGLE_OAUTH_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+    callbackURL: (process.env.ENVIORNMENT === "DEV")?'http://localhost:5000/auth/google/callback':"https://bll-webd-select.herokuapp.com/auth/google/callback",
+    scope: [ 'profile', 'email' ],
+},async (accessToken, refreshToken, profile, done)=>{
+    try{
+        let userdet = profile._json;
+        let user = await User.findOne({email:userdet.email});
+        if(user){
+            return done(null, user);
+        }else{
+            req.newUser = true;
+            let newUser = new User({
+                name:userdet.name,
+                email: userdet.email,
+                verified: userdet.email_verified,
+                profile: userdet.picture
+            });
+            newUser = await newUser.save();
+            return done(null, newUser);
         }
-        try{
-            let user = await User.findOne({email:userdet.email});
-            if(user){
-                return done(null, user);
-            }else{
-                req.newUser = true;
-                let newUser = new User(userdet);
-                newUser = await newUser.save();
-                return done(null, newUser);
-            }
-        }catch(err){
-            return done(null, false, {status:500, message:err.message});
-        }
+    }catch(err){
+        return done(null, false, {status:500, message:err.message});
     }
-));
+    }
+))
 
 passport.use("jwt", new JWTStrategy({
     jwtFromRequest: ExtractJWT.fromExtractors([ExtractJWT.fromHeader('secret'), ExtractJWT.fromAuthHeaderAsBearerToken(), ExtractJWT.fromBodyField('secret')]),
@@ -129,7 +123,7 @@ passport.use("jwt", new JWTStrategy({
 },
 async (jwtpayload, done)=>{
     let user = await User.findById(jwtpayload.id);
-    if(user){
+    if(user && Date.now()<Date.parse(jwtpayload.expire)){
         return done(null, user);
     }
     return (null, false);

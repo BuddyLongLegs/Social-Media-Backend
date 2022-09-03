@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Auth</title>
+</head>
+<body>
+    <button onclick="signin();">Sign In with Google</button>
+    <script>
+        var x = screen.width/2 - 500/2;
+        var y = screen.height/2 - 500/2;
+        function signin(){
+            window.open('/login/google', 'signinwithgoogle', 'width=500,height=500,left='+x+',top='+y);
+        }
+    </script>
+</body>
+</html>

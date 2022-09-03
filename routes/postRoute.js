@@ -22,11 +22,10 @@ router.get('/nearby', getNearbyPosts);
 router.post('/new', completeAndMedia, createPost);
 router.get('/:code/comment', getPostComments);
 router.post('/:code/like', completedProfileWithLogin, likePost);
+router.delete('/:code/comment/:comment', completedProfileWithLogin, deleteComment);
+router.post('/:code/comment', completedProfileWithLogin, newComment);
 router.get('/:code', getPost);
 router.patch('/:code', completedProfileWithLogin, editPost);
 router.delete('/:code', completedProfileWithLogin, deletePost);
-router.delete('/:code/comment/:comment', completedProfileWithLogin, deleteComment);
-router.post('/:code/comment', completedProfileWithLogin, newComment);
-
 
 module.exports = router;

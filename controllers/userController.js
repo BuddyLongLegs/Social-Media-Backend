@@ -1,4 +1,6 @@
 const User = require('../models/userModel');
+const notify = require('../utils/notify');
+const {genPassword} = require('../utils/passwordEncrypt');
 
 
 //search user by username or name
@@ -10,7 +12,7 @@ async function searchUser(req, res){
     var page = req.query.page ? Math.max(1, Number(req.query.page)) : 1;
     var perpage = Number(req.query.perpage) || 20;
     if(!query){
-        return res.status(400).json({message: "Required Fields Missing"});
+        return res.status(400).json({error: "Required Fields Missing"});
     }
     let dbQuery = {
         $text:{
@@ -32,11 +34,11 @@ async function searchUser(req, res){
 async function getUser(req, res){
     // for a url with username in the end
     var username = req.params.username;
-    if(!username)return res.status(400).json({message: "Required Fields Missing"});
+    if(!username)return res.status(400).json({error: "Required Fields Missing"});
 
     let user = await User.findOne({username:username}).select("username name postNum followerNum followingNum bio profile");
 
-    if(!user)return res.status(404).json({message: "User not found"});
+    if(!user)return res.status(404).json({error: "User not found"});
     
     return res.status(200).json(user);
 }
@@ -48,7 +50,7 @@ async function getUserPosts(req, res){
     var page = req.query.page ? Math.max(1, Number(req.query.page)) : 1;
     var perpage = Number(req.query.perpage) || 20;
     var sort = req.query.sort || "latest";
-    if(!username)return res.status(400).json({message: "Required Fields Missing"});
+    if(!username)return res.status(400).json({error: "Required Fields Missing"});
     
     let query = {username: username};
     let options = {
@@ -62,7 +64,7 @@ async function getUserPosts(req, res){
         limit: perpage
     }
     var user = await User.paginate(query, options);
-    if(!user)return res.status(404).json({message: "User not found"});
+    if(!user)return res.status(404).json({error: "User not found"});
     return res.status(200).json(user);
 }
 
@@ -71,7 +73,7 @@ async function getUserFollower(req, res){
     var username = req.params.username;
     var page = req.query.page ? Math.max(1, Number(req.query.page)) : 1;
     var perpage = Number(req.query.perpage) || 50;
-    if(!username)return res.status(400).json({message: "Required Fields Missing"});
+    if(!username)return res.status(400).json({error: "Required Fields Missing"});
 
     let query = {username: username};
     let options = {
@@ -85,7 +87,7 @@ async function getUserFollower(req, res){
         sort: {"follower.followedAt": -1}
     }
     var user = await User.paginate(query, options);
-    if(!user)return res.status(404).json({message: "User not found"});
+    if(!user)return res.status(404).json({error: "User not found"});
     return res.status(200).json(user);
 }
 
@@ -147,27 +149,196 @@ async function updateSelfUser(req, res){
 }
 
 async function followUser(req, res){
-    return res.status(200).json({message: "working"});
+    var user = req.user;
+    var fuser = await User.findOne({username: req.params.username});
+    if(!fuser || fuser._id==user._id){
+        return res.status(400).json({error: "invalid username"});
+    }
+    var alfol = false;
+    for(let i=0; i<user.followingNum; i++){
+        if(user.following[i].user == fuser._id){
+            alfol = true;
+            break;
+        }
+    }
+    if(alfol){
+        return res.status(400).json({error: "Already followed"});
+    }
+    user.followingNum++;
+    user.following.push({user: fuser._id, followedAt: Date.now()});
+    fuser.followerNum++;
+    fuser.follower.push({user: user._id, followedAt: Date.now()});
+    try{
+        await user.save();
+        await fuser.save();
+        return res.status(200).json({
+            message: "followed successfully",
+            data:{
+                followedUser:{
+                    username: fuser.username,
+                    name: fuser.name,
+                    postNum: fuser.postNum,
+                    followerNum: fuser.followerNum,
+                    followingNum: fuser.followingNum,
+                    profile: fuser.profile
+                },
+                self:{
+                    username: user.username,
+                    name: user.name,
+                    postNum: user.postNum,
+                    followerNum: user.followerNum,
+                    followingNum: user.followingNum,
+                    profile: user.profile
+                }
+            }
+        })
+    }catch(err){
+        return res.status(500).json({error: err});
+    }
 }
 
 async function unfollowUser(req, res){
-    return res.status(200).json({message: "working"});
+    var user = req.user;
+    var fuser = await User.findOne({username: req.params.username});
+    if(!fuser || fuser._id==user._id){
+        return res.status(400).json({error: "invalid username"});
+    }
+    var alfol = false;
+    for(let i=0; i<user.followingNum; i++){
+        if(user.following[i].user == fuser._id){
+            alfol = true;
+            break;
+        }
+    }
+    if(!alfol){
+        return res.status(400).json({error: "User not followed"});
+    }
+    user.followingNum--;
+    user.following = user.following.filter((val, ind, ar)=>{
+        return val.user != fuser._id;
+    })
+    fuser.followerNum--;
+    fuser.following = fuser.following.filter((val, ind, ar)=>{
+        return val.user != user._id;
+    })
+    try{
+        await user.save();
+        await fuser.save();
+        return res.status(200).json({
+            message: "unfollowed successfully",
+            data:{
+                unfollowedUser:{
+                    username: fuser.username,
+                    name: fuser.name,
+                    postNum: fuser.postNum,
+                    followerNum: fuser.followerNum,
+                    followingNum: fuser.followingNum,
+                    profile: fuser.profile
+                },
+                self:{
+                    username: user.username,
+                    name: user.name,
+                    postNum: user.postNum,
+                    followerNum: user.followerNum,
+                    followingNum: user.followingNum,
+                    profile: user.profile
+                }
+            }
+        })
+    }catch(err){
+        return res.status(500).json({error: err});
+    }
 }
  
 async function passwordChange(req, res){
-    return res.status(200).json({message: "working"});
+    let uemail = req.body.email,
+        code = req.body.code;
+    if(uemail===undefined || code ===undefined){
+        return res.status(400).json({error:"required field(s) missing"})
+    }
+    var user = await User.findOne({email: uemail});
+    if(!user){
+        return res.status(404).status({error: "User not found"});
+    }
+    if( !user.passwordrequest||
+        !user.passwordrequest.createdAt||
+        ((Date.now()-user.passwordrequest.createdAt)/1000 > (5*60))){
+
+        return res.status(400).status({error: "No Active Password Change Request"});
+    }
+    if(code !== user.passwordrequest.code){
+        return res.status(409).json({error: "Incorrect Code"});
+    }
+    let newpas = genPassword(req.body.password);
+    user.hash = newpas.hash;
+    user.salt = newpas.salt;
+    try{
+        await user.save();
+        return res.status(201).json({message: "Password changed successfully"});
+    }catch(err){
+        return res.status(500).json({error: err});
+    }
 }
  
 async function passwordChangeRequest(req, res){
-    return res.status(200).json({message: "working"});
+    let uemail = req.body.email;
+    if(uemail===undefined){
+        return res.status(400).json({error: "required field(s) missing"});
+    }
+    var user = await User.findOne({email: uemail});
+    if(!user){
+        return res.status(404).status({error: "User not found"});
+    }
+    user.passwordrequest.createdAt = Date.now();
+    user.passwordrequest.code = (Math.floor(100000 + Math.random() * 900000)).toString();
+    try{
+        await user.save();
+        notify(user.email,
+            "Password Change OTP",
+            `Use this OTP for changing your password: ${user.passwordrequest.code}.\nIt expires in 5 mins`);
+        return res.status(201).json({message: "OTP sent successfully"});
+    }catch(err){
+        return res.status(500).json({error: err});
+    }
 }
  
 async function verifyEmail(req, res){
-    return res.status(200).json({message: "working"});
+    let user = req.user,
+        code = req.body.code;
+    if(code ===undefined){
+        return res.status(400).json({error:"required field(s) missing"})
+    }
+    if( !user.verifyEmailRequest||
+        !user.verifyEmailRequest.createdAt||
+        ((Date.now()-user.verifyEmailRequest.createdAt)/1000 > (10*60))){
+
+        return res.status(400).status({error: "No Active Email Verification Request"});
+    }
+    if(code !== user.verifyEmailRequest.code){
+        return res.status(409).json({error: "Incorrect Code"});
+    }
+    user.verified = true;
+    try{
+        await user.save();
+        return res.status(201).json({message: "User Email Verified"});
+    }catch(err){
+        return res.status(500).json({error: err});
+    }
 }
  
 async function verifyEmailRequest(req, res){
-    return res.status(200).json({message: "working"});
+    let user = req.user;
+    user.verifyEmailRequest.createdAt = Date.now();
+    user.verifyEmailRequest.code = (Math.floor(100000 + Math.random() * 900000)).toString();
+    try{
+        await user.save();
+        notify(user.email,
+            "Email Verification OTP",
+            `Use this OTP for verifying your email ID: ${user.verifyEmailRequest.code}.\nIt expires in 10 mins`);
+        return res.status(201).json({message: "OTP sent Successfully"});
+    }catch(err){
+        return res.status(500).json({error: err});
+    }
 }
  
 async function userSelfProfile(req, res){

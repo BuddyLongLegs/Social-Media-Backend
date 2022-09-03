@@ -28,13 +28,15 @@ const jwt = require('jsonwebtoken');
 function normalLogin(req, res, next){
     passport.authenticate('user-signin-local', (err, user, info)=>{
         if(!user){
-            return res.status(info.status||404).json({message: info.message});
+            return res.status(info.status||404).json({error: info.message});
         }
         req.login(user, {session: false}, (err)=>{
             if(err){
-                return res.status(500).json({message: err.message});
+                return res.status(500).json({error: err.message});
             }
-            req.jwt = jwt.sign( {id: user._id}, process.env.SECRET);
+            var exp = new Date(Date.now());
+            exp.setMonth(exp.getMonth()+1);
+            req.jwt = jwt.sign( {id: user._id, expire: exp.toString()}, process.env.SECRET);
         });
         next();
     })(req, res, next);
@@ -43,13 +45,15 @@ function normalLogin(req, res, next){
 function normalSignup(req, res, next){
     passport.authenticate('user-signup-local', (err, user, info)=>{
         if(!user){
-            return res.status(info.status||404).json({message: info.message});
+            return res.status(info.status||404).json({error: info.message});
         }
         req.login(user, {session: false}, (err)=>{
             if(err){
-                return res.status(500).json({message: err.message});
+                return res.status(500).json({error: err.message});
             }
-            req.jwt = jwt.sign( {id: user._id}, process.env.SECRET);
+            var exp = new Date(Date.now());
+            exp.setMonth(exp.getMonth()+1);
+            req.jwt = jwt.sign( {id: user._id, expire: exp.toString()}, process.env.SECRET);
         });
         next();
     })(req, res, next);
@@ -58,13 +62,15 @@ function normalSignup(req, res, next){
 function googleLogin(req, res, next){
     passport.authenticate('user-google', (err, user, info)=>{
         if(!user){
-            return res.status(info.status||404).json({message: info.message});
+            return res.status(401).send("`<script defer>window.close()</script>");
         }
         req.login(user, {session: false}, (err)=>{
             if(err){
-                return res.status(500).json({message: err.message});
+                return res.status(500).json({error: err.message});
             }
-            req.jwt = jwt.sign( {id: user._id}, process.env.SECRET);
+            var exp = new Date(Date.now());
+            exp.setMonth(exp.getMonth()+1);
+            req.jwt = jwt.sign( {id: user._id, expire: exp.toString()}, process.env.SECRET);
         });
         next();
     })(req, res, next);
@@ -88,36 +94,20 @@ router.post('/signup', normalSignup, (req, res)=>{
         data:{
             username: req.user.username,
             name: req.user.name,
-            profile: req.user.profile,
         },
         secret: req.jwt
     })
 });
 
-router.post('/auth/google', googleLogin, (req, res)=>{
-    if(req.newUser){
-        return res.status(201).json({
-            message: "Account Created Successfully",
-            data: {
-                name: req.user.name,
-                profile: req.user.profile,
-            },
-            secret: req.jwt
-        })
-    }
-    return res.status(200).json({
-        message: "Logged in Successfully",
-        data:{
-            name: req.user.name,
-            profile: req.user.profile,
-        },
-        secret: req.jwt
-    })
+router.get('/login/google', passport.authenticate('user-google'));
+
+router.get('/auth/google/callback', googleLogin, (req, res)=>{
+    return res.send(`<script defer>localStorage.setItem("secret", "${req.jwt}"); window.close()</script>`)
 });
 
 
 router.get('/search', searchUser);
-router.get('/changepassword/request', passwordChangeRequest);
+router.post('/changepassword/request', passwordChangeRequest);
 router.patch('/changepassword', passwordChange);
 
 router.get('/verifyemail/request', ensureLoggedIn, verifyEmailRequest);

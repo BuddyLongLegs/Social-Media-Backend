@@ -10,8 +10,8 @@ const POST_ALLOWED_MIME_TYPES = [
     'image/jpeg',
     'image/png',
     'image/gif',
-    'video/mp4',
-    'video/quicktime' //for .mov videos
+    // 'video/mp4',
+    // 'video/quicktime' //for .mov videos
 ];
 
 const IMAGE_ALLOWED_MIME_TYPES = [
