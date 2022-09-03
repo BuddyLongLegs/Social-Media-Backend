@@ -135,7 +135,7 @@ For getting Authorization token via verifying your account through your google a
 >On successful authorization using uris `/login` and `/signup` the response comes with a secret which is JavaScript Web Token which will be used to authenticate the user with each request. For authorization using `/login/google`, the token is saved in the localStorage under the keyname `secret`. This token has an expiry of 1 month.
 >
 >**Sending Auth Token for restricted routes**\
->For request authentication the secret token is need to be sent with the response. It can be sent in any of the following ways:
+>For request authentication the secret token is need to be sent with the response. It has to be sent in the following way:
 >##### As Request Header
 >```json
 >{
@@ -144,24 +144,7 @@ For getting Authorization token via verifying your account through your google a
 >    }    
 >}
 >```
->---
->##### As Authorization Bearer Token
->```json
->{
->  "headers" : {
->      "Authorization" : "Bearer javascriptwebtoken",
->    }    
->}
->```
->---
->##### As a Field in Body
->```json
->{
->  "body" : {
->      "secret" : "javascriptwebtoken",
->    }    
->}
->```
+
 
 ---
 
