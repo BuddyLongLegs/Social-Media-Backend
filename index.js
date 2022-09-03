@@ -30,4 +30,4 @@ app.use('/test', express.static(__dirname+'/tests'));
 app.use('/post', require('./routes/postRoute'));
 app.use('/', require('./routes/userRoute'));
 
-app.listen(process.env.PORT, console.log((process.env.ENVIORNMENT)?`listening on http://localhost:${process.env.PORT}/`:"https://bll-webd-select.herokuapp.com/"))
+app.listen(process.env.PORT, console.log((process.env.ENVIORNMENT==="DEV")?`listening on http://localhost:${process.env.PORT}/`:"https://bll-webd-select.herokuapp.com/"))
