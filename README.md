@@ -98,7 +98,7 @@ For getting Authorization token via verifying your account through your google a
 >#### Response
 >**Successfull Response**\
 >Response URI: `/auth/google/callback`\
->Response Content Type: `Application/JSON`
+>Response Content Type: `text/html`
 >```html
 ><script defer>
 >   localStorage.setItem("secret", "javascriptwebtoken");

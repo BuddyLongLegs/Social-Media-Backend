@@ -118,7 +118,7 @@ passport.use("user-google", new GoogleStrategy({
 ))
 
 passport.use("jwt", new JWTStrategy({
-    jwtFromRequest: ExtractJWT.fromExtractors([ExtractJWT.fromHeader('secret'), ExtractJWT.fromAuthHeaderAsBearerToken(), ExtractJWT.fromBodyField('secret')]),
+    jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
     secretOrKey   : process.env.SECRET
 },
 async (jwtpayload, done)=>{
