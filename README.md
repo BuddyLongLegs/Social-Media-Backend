@@ -138,48 +138,27 @@ For getting Authorization token via verifying your account through your google a
 >For request authentication the secret token is need to be sent with the response. It can be sent in any of the following ways:
 >##### As Request Header
 >```json
->//HTTP Request
 >{
 >  "headers" : {
->      .  
->      .  
->      .
 >      "secret" : "javascriptwebtoken",
->      .  
->      .  
->      .  
 >    }    
 >}
 >```
 >---
 >##### As Authorization Bearer Token
 >```json
->//HTTP Request
 >{
 >  "headers" : {
->      .  
->      .  
->      .
 >      "Authorization" : "Bearer javascriptwebtoken",
->      .  
->      .  
->      .  
 >    }    
 >}
 >```
 >---
 >##### As a Field in Body
 >```json
->//HTTP Request
 >{
 >  "body" : {
->      .  
->      .  
->      .
 >      "secret" : "javascriptwebtoken",
->      .  
->      .  
->      .  
 >    }    
 >}
 >```
@@ -369,7 +348,6 @@ Search a user using a query string, paginated response will contain list of top 
 >Response Code: `200`
 >```json
 >{
->   // array of related users
 >   "docs" : [{ 
 >               "username"  : "username",
 >               "name"      : "User's name",
