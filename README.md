@@ -1,7 +1,5 @@
 # Social-Media-Backend
 
-Hosted On: [https://bll-webd-select.herokuapp.com/](https://bll-webd-select.herokuapp.com/)
-
 ### Signing Up
 
 Before anything to do, you would like sign up to the social media platform. Resquest Structure for signing up is as follows:
