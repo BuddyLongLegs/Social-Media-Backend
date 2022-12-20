@@ -1,4 +1,4 @@
-# BuddyLongLegs-Webd-Round2
+# Social-Media-Backend
 
 Hosted On: [https://bll-webd-select.herokuapp.com/](https://bll-webd-select.herokuapp.com/)
 
